@@ -109,8 +109,27 @@ export default function ProductsPage() {
     fetchPromise
       .then((data) => {
         if (thisRequestId !== requestIdRef.current) return;
-        setProducts(data.products);
-        setTotal(data.total);
+
+        let list = data.products;
+        let listTotal = data.total;
+
+        const pendingEdits = JSON.parse(sessionStorage.getItem("pendingEdits") || "{}");
+        list = list.map((p) => (pendingEdits[p.id] ? { ...p, ...pendingEdits[p.id] } : p));
+
+        const pendingDeletes = JSON.parse(sessionStorage.getItem("pendingDeletes") || "[]");
+        if (pendingDeletes.length > 0) {
+          list = list.filter((p) => !pendingDeletes.includes(String(p.id)));
+          listTotal -= pendingDeletes.length;
+        }
+
+        if (page === 1 && !urlQuery && !category) {
+          const pendingAdds = JSON.parse(sessionStorage.getItem("pendingAdds") || "[]");
+          list = [...pendingAdds, ...list];
+          listTotal += pendingAdds.length;
+        }
+
+        setProducts(list);
+        setTotal(listTotal);
       })
       .catch(() => {
         if (thisRequestId !== requestIdRef.current) return;
@@ -127,7 +146,7 @@ export default function ProductsPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="mb-4 flex flex-wrap gap-3">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <input
           type="text"
           placeholder="Search products..."
@@ -160,6 +179,13 @@ export default function ProductsPage() {
             </option>
           ))}
         </select>
+
+        <button
+          onClick={() => router.push("/products/new")}
+          className="ml-auto rounded bg-green-600 px-4 py-2 text-white"
+        >
+          + Add Product
+        </button>
       </div>
 
       {category && urlQuery && (
