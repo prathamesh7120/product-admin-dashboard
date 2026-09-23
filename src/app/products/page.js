@@ -1,7 +1,12 @@
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getProducts, searchProducts } from "@/lib/productsApi";
+import {
+  getProducts,
+  searchProducts,
+  getProductsByCategory,
+  getCategories,
+} from "@/lib/productsApi";
 
 function parsePage(value, totalPages) {
   const n = parseInt(value, 10);
@@ -16,6 +21,16 @@ function parsePageSize(value) {
   return allowed.includes(n) ? n : 10;
 }
 
+const SORT_OPTIONS = [
+  { value: "", label: "Default" },
+  { value: "price-asc", label: "Price: Low to High" },
+  { value: "price-desc", label: "Price: High to Low" },
+  { value: "rating-asc", label: "Rating: Low to High" },
+  { value: "rating-desc", label: "Rating: High to Low" },
+  { value: "title-asc", label: "Title: A to Z" },
+  { value: "title-desc", label: "Title: Z to A" },
+];
+
 export default function ProductsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -23,14 +38,18 @@ export default function ProductsPage() {
   const rawPage = searchParams.get("page");
   const pageSize = parsePageSize(searchParams.get("limit"));
   const urlQuery = searchParams.get("q") || "";
+  const category = searchParams.get("category") || "";
+  const sortValue = searchParams.get("sort") || "";
+
+  const [sortBy, order] = sortValue ? sortValue.split("-") : [undefined, undefined];
 
   const [products, setProducts] = useState([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [categories, setCategories] = useState([]);
 
-  // Local input state, separate from the URL, so typing feels instant
   const [searchInput, setSearchInput] = useState(urlQuery);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -51,38 +70,48 @@ export default function ProductsPage() {
     [searchParams, router]
   );
 
-  // --- Debounce: wait 400ms after the user stops typing before updating the URL ---
+  // Load category list once
+  useEffect(() => {
+    getCategories()
+      .then((data) => setCategories(data))
+      .catch(() => setCategories([]));
+  }, []);
+
+  // Debounced search -> URL
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchInput !== urlQuery) {
-        updateParams({ q: searchInput || null, page: 1 }); // reset to page 1 on new search
+        updateParams({ q: searchInput || null, page: 1 });
       }
     }, 400);
-    return () => clearTimeout(timer); // cancels the pending timer if the user types again
+    return () => clearTimeout(timer);
   }, [searchInput]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Keep the input box in sync if the URL changes some other way (e.g. back button)
   useEffect(() => {
     setSearchInput(urlQuery);
   }, [urlQuery]);
 
-  // --- Race-condition-safe fetch ---
   const requestIdRef = useRef(0);
 
   useEffect(() => {
     setIsLoading(true);
     setError(null);
     const skip = (page - 1) * pageSize;
+    const thisRequestId = ++requestIdRef.current;
 
-    const thisRequestId = ++requestIdRef.current; // tag this request
-
-    const fetchPromise = urlQuery
-      ? searchProducts({ query: urlQuery, limit: pageSize, skip })
-      : getProducts({ limit: pageSize, skip });
+    // Category wins over search — see design note in the UI below
+    let fetchPromise;
+    if (category) {
+      fetchPromise = getProductsByCategory({ category, limit: pageSize, skip, sortBy, order });
+    } else if (urlQuery) {
+      fetchPromise = searchProducts({ query: urlQuery, limit: pageSize, skip, sortBy, order });
+    } else {
+      fetchPromise = getProducts({ limit: pageSize, skip, sortBy, order });
+    }
 
     fetchPromise
       .then((data) => {
-        if (thisRequestId !== requestIdRef.current) return; // a newer request has since fired; ignore this stale result
+        if (thisRequestId !== requestIdRef.current) return;
         setProducts(data.products);
         setTotal(data.total);
       })
@@ -94,14 +123,14 @@ export default function ProductsPage() {
         if (thisRequestId !== requestIdRef.current) return;
         setIsLoading(false);
       });
-  }, [page, pageSize, urlQuery, refreshKey]);
+  }, [page, pageSize, urlQuery, category, sortBy, order, refreshKey]);
 
   const startItem = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const endItem = Math.min(page * pageSize, total);
 
   return (
     <div className="p-4 md:p-8">
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap gap-3">
         <input
           type="text"
           placeholder="Search products..."
@@ -109,7 +138,39 @@ export default function ProductsPage() {
           onChange={(e) => setSearchInput(e.target.value)}
           className="w-full max-w-md rounded border p-2"
         />
+
+        <select
+          value={category}
+          onChange={(e) => updateParams({ category: e.target.value || null, page: 1 })}
+          className="rounded border p-2"
+        >
+          <option value="">All categories</option>
+          {categories.map((c) => (
+            <option key={c.slug} value={c.slug}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={sortValue}
+          onChange={(e) => updateParams({ sort: e.target.value || null, page: 1 })}
+          className="rounded border p-2"
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
       </div>
+
+      {category && urlQuery && (
+        <p className="mb-3 text-sm text-amber-600">
+          Showing results for category "{category}". Search text is saved but
+          not applied while a category is selected, since the API can't combine both.
+        </p>
+      )}
 
       {isLoading && <div>Loading...</div>}
 
