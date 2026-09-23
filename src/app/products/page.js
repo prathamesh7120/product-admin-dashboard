@@ -1,15 +1,51 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getProducts } from "@/lib/productsApi";
 
+function parsePage(value, totalPages) {
+  const n = parseInt(value, 10);
+  if (isNaN(n) || n < 1) return 1;
+  if (totalPages && n > totalPages) return totalPages;
+  return n;
+}
+
+function parsePageSize(value) {
+  const allowed = [10, 20, 50];
+  const n = parseInt(value, 10);
+  return allowed.includes(n) ? n : 10;
+}
+
 export default function ProductsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const rawPage = searchParams.get("page");
+  const pageSize = parsePageSize(searchParams.get("limit"));
+
   const [products, setProducts] = useState([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const page = parsePage(rawPage, total ? totalPages : undefined);
+
+  const updateParams = useCallback(
+    (updates) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === undefined) {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      });
+      router.push(`/products?${params.toString()}`);
+    },
+    [searchParams, router]
+  );
 
   useEffect(() => {
     setIsLoading(true);
@@ -25,7 +61,6 @@ export default function ProductsPage() {
       .finally(() => setIsLoading(false));
   }, [page, pageSize, refreshKey]);
 
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const startItem = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const endItem = Math.min(page * pageSize, total);
 
@@ -51,7 +86,6 @@ export default function ProductsPage() {
 
   return (
     <div className="p-4 md:p-8">
-      {/* Desktop table */}
       <table className="hidden w-full border-collapse md:table">
         <thead>
           <tr className="border-b text-left">
@@ -79,7 +113,6 @@ export default function ProductsPage() {
         </tbody>
       </table>
 
-      {/* Mobile cards */}
       <div className="space-y-3 md:hidden">
         {products.map((p) => (
           <div key={p.id} className="flex gap-3 rounded border p-3">
@@ -93,7 +126,6 @@ export default function ProductsPage() {
         ))}
       </div>
 
-      {/* Pagination */}
       <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
         <p className="text-sm text-gray-500">
           Showing {startItem}–{endItem} of {total}
@@ -101,7 +133,7 @@ export default function ProductsPage() {
 
         <select
           value={pageSize}
-          onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+          onChange={(e) => updateParams({ limit: e.target.value, page: 1 })}
           className="rounded border p-1"
         >
           <option value={10}>10 / page</option>
@@ -112,7 +144,7 @@ export default function ProductsPage() {
         <div className="flex items-center gap-2">
           <button
             disabled={page === 1}
-            onClick={() => setPage((p) => p - 1)}
+            onClick={() => updateParams({ page: page - 1 })}
             className="rounded border px-3 py-1 disabled:opacity-40"
           >
             Previous
@@ -120,7 +152,7 @@ export default function ProductsPage() {
           <span>Page {page} of {totalPages}</span>
           <button
             disabled={page === totalPages}
-            onClick={() => setPage((p) => p + 1)}
+            onClick={() => updateParams({ page: page + 1 })}
             className="rounded border px-3 py-1 disabled:opacity-40"
           >
             Next
