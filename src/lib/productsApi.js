@@ -25,3 +25,8 @@ export async function getCategories() {
   const res = await api.get("/products/categories");
   return res.data; // array of { slug, name, url }
 }
+
+export async function getProductById(id) {
+  const res = await api.get(`/products/${id}`);
+  return res.data;
+}

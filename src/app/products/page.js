@@ -70,14 +70,12 @@ export default function ProductsPage() {
     [searchParams, router]
   );
 
-  // Load category list once
   useEffect(() => {
     getCategories()
       .then((data) => setCategories(data))
       .catch(() => setCategories([]));
   }, []);
 
-  // Debounced search -> URL
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchInput !== urlQuery) {
@@ -99,7 +97,6 @@ export default function ProductsPage() {
     const skip = (page - 1) * pageSize;
     const thisRequestId = ++requestIdRef.current;
 
-    // Category wins over search — see design note in the UI below
     let fetchPromise;
     if (category) {
       fetchPromise = getProductsByCategory({ category, limit: pageSize, skip, sortBy, order });
@@ -205,7 +202,11 @@ export default function ProductsPage() {
             </thead>
             <tbody>
               {products.map((p) => (
-                <tr key={p.id} className="border-b">
+                <tr
+                  key={p.id}
+                  onClick={() => router.push(`/products/${p.id}`)}
+                  className="cursor-pointer border-b hover:bg-gray-50"
+                >
                   <td className="p-2">
                     <img src={p.thumbnail} alt={p.title} className="h-12 w-12 object-cover" />
                   </td>
@@ -221,7 +222,11 @@ export default function ProductsPage() {
 
           <div className="space-y-3 md:hidden">
             {products.map((p) => (
-              <div key={p.id} className="flex gap-3 rounded border p-3">
+              <div
+                key={p.id}
+                onClick={() => router.push(`/products/${p.id}`)}
+                className="flex cursor-pointer gap-3 rounded border p-3 hover:bg-gray-50"
+              >
                 <img src={p.thumbnail} alt={p.title} className="h-16 w-16 object-cover" />
                 <div>
                   <p className="font-medium">{p.title}</p>
