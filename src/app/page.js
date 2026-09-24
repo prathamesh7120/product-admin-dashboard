@@ -1,15 +1,14 @@
 "use client";
-import { useEffect, useState } from "react";
-import api from "@/lib/axios";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const [msg, setMsg] = useState("loading...");
+  const router = useRouter();
 
   useEffect(() => {
-    api.get("/products?limit=1").then((res) => {
-      setMsg(res.data.products[0].title);
-    });
-  }, []);
+    const token = localStorage.getItem("token");
+    router.replace(token ? "/products" : "/login");
+  }, [router]);
 
-  return <div className="p-8 text-xl">{msg}</div>;
+  return null;
 }
