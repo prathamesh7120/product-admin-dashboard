@@ -4,7 +4,7 @@ A small admin dashboard built with Next.js, React, Tailwind CSS, and Axios, usin
 
 ## Setup
 
-1. Clone the repo: `git clone <your-repo-url>`
+1. Clone the repo: `git clone https://github.com/prathamesh7120/product-admin-dashboard.git`
 2. Install dependencies: `npm install`
 3. Run the dev server: `npm run dev`
 4. Open `http://localhost:3000`
