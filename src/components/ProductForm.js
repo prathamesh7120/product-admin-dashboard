@@ -9,6 +9,19 @@ const initialForm = {
   description: "",
 };
 
+function Field({ label, error, children }) {
+  return (
+    <div>
+      <label className="mb-1 block text-sm font-medium text-gray-700">{label}</label>
+      {children}
+      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+    </div>
+  );
+}
+
+const inputClass =
+  "w-full rounded-lg border border-gray-200 px-3 py-2.5 text-gray-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
+
 export default function ProductForm({ initialData, onSubmit, onCancel }) {
   const [form, setForm] = useState(initialData || initialForm);
   const [errors, setErrors] = useState({});
@@ -29,7 +42,7 @@ export default function ProductForm({ initialData, onSubmit, onCancel }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (isSubmitting) return; // guard against double-click on Save
+    if (isSubmitting) return;
 
     const validationErrors = validate();
     setErrors(validationErrors);
@@ -52,74 +65,70 @@ export default function ProductForm({ initialData, onSubmit, onCancel }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md space-y-4">
-      <div>
-        <label className="mb-1 block text-sm font-medium">Title</label>
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-lg space-y-5 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8"
+    >
+      <Field label="Title" error={errors.title}>
         <input
           type="text"
           value={form.title}
           onChange={(e) => handleChange("title", e.target.value)}
-          className="w-full rounded border p-2"
+          className={inputClass}
         />
-        {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title}</p>}
-      </div>
+      </Field>
 
-      <div>
-        <label className="mb-1 block text-sm font-medium">Category</label>
+      <Field label="Category" error={errors.category}>
         <input
           type="text"
           value={form.category}
           onChange={(e) => handleChange("category", e.target.value)}
-          className="w-full rounded border p-2"
+          className={inputClass}
         />
-        {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category}</p>}
+      </Field>
+
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Price" error={errors.price}>
+          <input
+            type="number"
+            step="0.01"
+            value={form.price}
+            onChange={(e) => handleChange("price", e.target.value)}
+            className={inputClass}
+          />
+        </Field>
+
+        <Field label="Stock" error={errors.stock}>
+          <input
+            type="number"
+            value={form.stock}
+            onChange={(e) => handleChange("stock", e.target.value)}
+            className={inputClass}
+          />
+        </Field>
       </div>
 
-      <div>
-        <label className="mb-1 block text-sm font-medium">Price</label>
-        <input
-          type="number"
-          step="0.01"
-          value={form.price}
-          onChange={(e) => handleChange("price", e.target.value)}
-          className="w-full rounded border p-2"
-        />
-        {errors.price && <p className="mt-1 text-sm text-red-600">{errors.price}</p>}
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium">Stock</label>
-        <input
-          type="number"
-          value={form.stock}
-          onChange={(e) => handleChange("stock", e.target.value)}
-          className="w-full rounded border p-2"
-        />
-        {errors.stock && <p className="mt-1 text-sm text-red-600">{errors.stock}</p>}
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium">Description</label>
+      <Field label="Description">
         <textarea
           value={form.description}
           onChange={(e) => handleChange("description", e.target.value)}
-          className="w-full rounded border p-2"
-          rows={3}
+          className={inputClass}
+          rows={4}
         />
-      </div>
+      </Field>
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 pt-2">
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
+          className="rounded-lg bg-indigo-600 px-5 py-2.5 font-medium text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
         >
           {isSubmitting ? "Saving..." : "Save"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded border px-4 py-2"
+          className="rounded-lg border border-gray-200 px-5 py-2.5 font-medium text-gray-600 transition hover:bg-gray-50"
         >
           Cancel
         </button>

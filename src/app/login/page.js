@@ -12,7 +12,7 @@ export default function LoginPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (isSubmitting) return; // guard against double-click
+    if (isSubmitting) return;
 
     setError("");
     setIsSubmitting(true);
@@ -28,39 +28,50 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-emerald-50 px-4">
       <form
         onSubmit={handleSubmit}
-        className="w-80 space-y-4 rounded-lg bg-white p-6 shadow"
+        className="w-full max-w-sm space-y-5 rounded-2xl border border-gray-100 bg-white p-8 shadow-xl shadow-gray-200/60"
       >
-        <h1 className="text-xl font-semibold">Log in</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
+          <p className="mt-1 text-sm text-gray-500">Sign in to manage your products</p>
+        </div>
 
         {error && (
-          <p className="rounded bg-red-50 p-2 text-sm text-red-600">{error}</p>
+          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
         )}
 
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className="w-full rounded border p-2"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded border p-2"
-          required
-        />
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">Username</label>
+          <input
+            type="text"
+            placeholder="emilys"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-gray-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">Password</label>
+          <input
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-gray-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            required
+          />
+        </div>
+
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded bg-blue-600 p-2 text-white disabled:opacity-50"
+          className="w-full rounded-lg bg-indigo-600 py-2.5 font-medium text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
         >
-          {isSubmitting ? "Logging in..." : "Log in"}
+          {isSubmitting ? "Signing in..." : "Sign in"}
         </button>
       </form>
     </div>

@@ -42,12 +42,24 @@ export default function EditProductPage() {
     router.push(`/products/${id}`);
   }
 
-  if (isLoading) return <div className="p-8">Loading...</div>;
-  if (!product) return <div className="p-8">Product not found.</div>;
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center text-gray-400">
+        Loading…
+      </div>
+    );
+  }
+  if (!product) {
+    return (
+      <div className="mx-auto max-w-2xl p-4 md:p-8">
+        <p className="text-gray-500">Product not found.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4 md:p-8">
-      <h1 className="mb-4 text-xl font-semibold">Edit Product</h1>
+    <div className="mx-auto max-w-2xl p-4 md:p-8">
+      <h1 className="mb-6 text-2xl font-bold text-gray-900">Edit Product</h1>
       <ProductForm
         initialData={{
           title: product.title,
